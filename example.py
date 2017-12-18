@@ -14,10 +14,13 @@ start_x = random.randrange(grid.width / 8, grid.width - grid.width / 8)
 end_y = random.randrange(grid.height - grid.height / 4, grid.height - grid.height / 8)
 end_x = random.randrange(grid.width / 8, grid.width - grid.width / 8)
 
+print start_x, start_y, end_x, end_y
+
 human = Human([start_x, start_y], [end_x, end_y])
 
 while done == False:
     human.generate_path()
-    human.move()
-    grid.on(human.pos[0], human.pos[1], human.size, (255, 0, 0))
-    clock.tick()
+    if human.move() is False:
+        done = True
+    grid.on(human.pos[0], human.pos[1], 1, (255, 0, 0))
+    clock.tick(10)

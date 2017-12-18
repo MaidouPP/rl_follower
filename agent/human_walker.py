@@ -1,13 +1,14 @@
 import pygame
 import numpy as np
 import random
+import math
 
 class Human():
     """
     This class implements a basic random human walker from
     a starting point to a goal with shortest path.
     """
-    def __init__(self, start, end, path=None, size=3):
+    def __init__(self, start, end, path=None, size=1):
         self._start = start
         self._end = end
         self._path = path
@@ -23,21 +24,32 @@ class Human():
             self._path = []
             x = self._end[0] - self._start[0]
             y = self._end[1] - self._start[1]
-            if y > x:
-                self._path = [[1, 1]] * x
-                self._path += [[0, 1]] * (y - x)
-            else:
-                self._path = [[1, 1]] * y
-                self._path += [[1, 0]] * (x - y)
 
-        random.shuffle(self._path)
-        print self._path
+            len_of_path = max(abs(x), abs(y))
+            xs = []
+            ys = []
+            unit_x = x / abs(x)
+            unit_y = y / abs(y)
+
+            if abs(x) >= abs(y):
+                xs = [[unit_x]] * len_of_path
+                ys = [[unit_y]] * abs(y)
+                ys += [[0]] * (len_of_path - abs(y))
+            else:
+                ys = [[unit_y]] * len_of_path
+                xs = [[unit_x]] * abs(x)
+                xs += [[0]] * (len_of_path - abs(x))
+
+            random.shuffle(xs)
+            random.shuffle(ys)
+            self._path = np.array([xs, ys]).squeeze()
+            print self._path.shape
 
     def move(self):
-        self.pos[0] += self._path[self._idx][0]
-        self.pos[1] += self._path[self._idx][1]
+        self.pos[0] += self._path[0][self._idx]
+        self.pos[1] += self._path[1][self._idx]
         self._idx += 1
-        if self._idx >= len(self._path):
+        if self._idx >= self._path.shape[1]:
             return False
         else:
             return True
