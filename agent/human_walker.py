@@ -3,16 +3,18 @@ import numpy as np
 import random
 import math
 
+
 class Human():
     """
     This class implements a basic random human walker from
     a starting point to a goal with shortest path.
     """
+
     def __init__(self, start, end, path=None, size=1):
         self._start = start
         self._end = end
         self._path = path
-        self._idx = 0
+        self._idx = 1
         self.size = size
         self.pos = start
 
@@ -28,8 +30,9 @@ class Human():
             len_of_path = max(abs(x), abs(y))
             xs = []
             ys = []
-            unit_x = x / abs(x)
-            unit_y = y / abs(y)
+            
+            unit_x = x / abs(x) if x <> 0 else 0
+            unit_y = y / abs(y) if y <> 0 else 0
 
             if abs(x) >= abs(y):
                 xs = [[unit_x]] * len_of_path
@@ -43,7 +46,6 @@ class Human():
             random.shuffle(xs)
             random.shuffle(ys)
             self._path = np.array([xs, ys]).squeeze()
-            print self._path.shape
 
     def move(self):
         self.pos[0] += self._path[0][self._idx]
@@ -53,6 +55,7 @@ class Human():
             return False
         else:
             return True
+
 
 if __name__ == '__main__':
     test = Human([0, 0], [3, 10])
