@@ -5,6 +5,7 @@ import random
 import numpy as np
 from agent.agent import RL, SarsaAgent
 import pickle
+import argparse
 
 grid = pygrid.pyGrid(100, 100, 10, 10, 2)
 clock = pygame.time.Clock()
@@ -32,6 +33,15 @@ robot = SarsaAgent(action_space,
                    last_human_position=np.array([0, 0]),
                    comfortable_radius=comfortable_radius)
 
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Parameters for follower')
+    parser.add_argument('--phase', default='train',
+                        help='train or test')
+    parser.add_argument('--param', default='q_result',
+                        help='indicate q-table param file')
+    args = parser.parse_args()
+    return args
 
 def step(act, pos):
     if act == 0:
@@ -98,8 +108,8 @@ def action_for_test(q, robot_position, human_position):
     return act
 
 
-def test():
-    f = open('q_result', 'r')
+def test(file):
+    f = open(file, 'r')
     q = pickle.load(f)
     f.close()
 
@@ -111,15 +121,12 @@ def test():
         end_x = random.randrange(grid.width / 8, grid.width - grid.width / 8)
 
         robot_pos = np.array([start_x, start_y - 2])
-        # robot.reinit(last_robot_position=robot_position,
-                     # last_human_position=np.array([start_x, start_y]))
 
         human = Human([start_x, start_y], [end_x, end_y])
         human.generate_path()
         done = False
 
         while done == False:
-            # human.generate_path()
             if human.move() is False:
                 done = True
             grid.on(human.pos[0], human.pos[1], 1, (255, 0, 0))
@@ -129,14 +136,17 @@ def test():
 
             grid.on(robot_pos[0], robot_pos[1], 1, (0, 255, 0))
 
-            clock.tick(10)
+            clock.tick(5)
 
         grid.clear()
 
 
 if __name__ == '__main__':
-    # train()
-    # f = open("q_result", 'w')
-    # pickle.dump(robot.q_table, f)
-    # f.close()
-    test()
+    args = parse_args()
+    if args.phase == 'train':
+        train()
+        f = open("q_result", 'w')
+        pickle.dump(robot.q_table, f)
+        f.close()
+    else:
+        test(args.param)
