@@ -21,7 +21,7 @@ pygame.init()
 # by Ian Mallett: www.geometrian.com
 
 
-class pyGrid:
+class pyGrid(object):
 
     def __init__(self, x_cells=13, y_cells=10, cell_w=25, cell_h=25,
                  border_px=4, border_rgb=(204, 212, 163),
