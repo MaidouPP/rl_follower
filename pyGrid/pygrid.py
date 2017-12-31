@@ -24,8 +24,9 @@ pygame.init()
 class pyGrid(object):
 
     def __init__(self, x_cells=13, y_cells=10, cell_w=25, cell_h=25,
-                 border_px=4, border_rgb=(204, 212, 163),
+                 border_px=1, border_rgb=(204, 212, 163),
                  off=(191, 199, 149), on=(40, 50, 40),
+                 other=(200, 0, 0),
                  radius=0, caption="pyGrid Project"):
 
         self.width  = x_cells
@@ -39,6 +40,7 @@ class pyGrid(object):
 
         self.off_color = off
         self.on_color  = on
+        self.other_color = other
 
         self.radius = radius
 
@@ -82,10 +84,12 @@ class pyGrid(object):
                 else:
                     x_pos = (self.border_weight * (x + 1)) + (self.cell_width * x)
 
-                if self.cells[y][x] > 0:
+                if self.cells[y][x] == 1:
                     cell_state_color = self.on_color
-                else:
+                elif self.cells[y][x] == 0:
                     cell_state_color = self.off_color
+                else:
+                    cell_state_color = self.other_color
 
                 if self.radius == 0:
                     pygame.draw.rect(self.screen, cell_state_color,
@@ -146,6 +150,29 @@ class pyGrid(object):
             [x_pos, y_pos, self.cell_width, self.cell_height])
         else:
             padlib.draw.rrect(self.screen, self.off_color,
+            (x_pos, y_pos, self.cell_width, self.cell_height), self.radius, 0)
+
+        # Flip screen and whatnot
+        pygame.display.flip()
+
+    def other(self, x, y):
+        self.cells[y][x] = 2
+
+        if y == 0:
+            y_pos = self.border_weight
+        else:
+            y_pos = (self.border_weight * y) + (self.cell_height * y) + self.border_weight
+
+        if x == 0:
+            x_pos = self.border_weight
+        else:
+            x_pos = (self.border_weight * x) + (self.cell_width * x) + self.border_weight
+
+        if self.radius == 0:
+            pygame.draw.rect(self.screen, self.other_color,
+            [x_pos, y_pos, self.cell_width, self.cell_height])
+        else:
+            padlib.draw.rrect(self.screen, self.other_color,
             (x_pos, y_pos, self.cell_width, self.cell_height), self.radius, 0)
 
         # Flip screen and whatnot
