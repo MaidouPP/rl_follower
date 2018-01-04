@@ -10,7 +10,7 @@ from itertools import product
 import numpy as np
 import numpy.random as rn
 
-from . import value_iteration
+import value_iteration
 
 def irl(feature_matrix, n_actions, discount, transition_probability,
         trajectories, epochs, learning_rate):
@@ -68,7 +68,7 @@ def find_svf(n_states, trajectories):
     svf = np.zeros(n_states)
 
     for trajectory in trajectories:
-        for state, _, _ in trajectory:
+        for state in trajectory:
             svf[state] += 1
 
     svf /= trajectories.shape[0]
@@ -92,7 +92,7 @@ def find_feature_expectations(feature_matrix, trajectories):
     feature_expectations = np.zeros(feature_matrix.shape[1])
 
     for trajectory in trajectories:
-        for state, _, _ in trajectory:
+        for state in trajectory:
             feature_expectations += feature_matrix[state]
 
     feature_expectations /= trajectories.shape[0]
@@ -119,7 +119,7 @@ def find_expected_svf(n_states, r, n_actions, discount,
     """
 
     n_trajectories = trajectories.shape[0]
-    trajectory_length = trajectories.shape[1]
+    # trajectory_length = trajectories.shape[1]
 
     # policy = find_policy(n_states, r, n_actions, discount,
     #                                 transition_probability)
@@ -132,12 +132,13 @@ def find_expected_svf(n_states, r, n_actions, discount,
     p_start_state = start_state_count/n_trajectories
 
     expected_svf = np.tile(p_start_state, (trajectory_length, 1)).T
-    for t in range(1, trajectory_length):
-        expected_svf[:, t] = 0
-        for i, j, k in product(range(n_states), range(n_actions), range(n_states)):
-            expected_svf[k, t] += (expected_svf[i, t-1] *
-                                  policy[i, j] * # Stochastic policy
-                                  transition_probability[i, j, k])
+    for n in xrange(n_trajectories):
+        for t in range(1, len(trajectories[n])):
+            expected_svf[:, t] = 0
+            for i, j, k in product(range(n_states), range(n_actions), range(n_states)):
+                expected_svf[k, t] += (expected_svf[i, t-1] *
+                                      policy[i, j] * # Stochastic policy
+                                      transition_probability[i, j, k])
 
     return expected_svf.sum(axis=1)
 
