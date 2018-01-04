@@ -121,7 +121,6 @@ class pyGrid(object):
 
         if radius == None:
             radius = self.radius
-
         if radius == 0:
             pygame.draw.rect(self.screen, on_color,
             [x_pos, y_pos, self.cell_width, self.cell_height])
