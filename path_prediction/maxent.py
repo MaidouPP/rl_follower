@@ -44,8 +44,12 @@ def irl(feature_matrix, n_actions, discount, transition_probability,
 
     # Gradient descent on alpha.
     for i in range(epochs):
-        # print("i: {}".format(i))
+        if i % (epochs/20) == 0:
+            print 'epoch: {}/{}'.format(i, epochs)
+
+        # compute the reward
         r = feature_matrix.dot(alpha)
+
         expected_svf = find_expected_svf(n_states, r, n_actions, discount,
                                          transition_probability, trajectories)
         grad = feature_expectations - feature_matrix.T.dot(expected_svf)
@@ -119,7 +123,7 @@ def find_expected_svf(n_states, r, n_actions, discount,
     """
 
     n_trajectories = trajectories.shape[0]
-    # trajectory_length = trajectories.shape[1]
+    trajectory_length = trajectories.shape[1]
 
     # policy = find_policy(n_states, r, n_actions, discount,
     #                                 transition_probability)
@@ -128,17 +132,14 @@ def find_expected_svf(n_states, r, n_actions, discount,
 
     start_state_count = np.zeros(n_states)
     for trajectory in trajectories:
-        start_state_count[trajectory[0, 0]] += 1
+        start_state_count[trajectory[0]] += 1
     p_start_state = start_state_count/n_trajectories
 
     expected_svf = np.tile(p_start_state, (trajectory_length, 1)).T
-    for n in xrange(n_trajectories):
-        for t in range(1, len(trajectories[n])):
-            expected_svf[:, t] = 0
-            for i, j, k in product(range(n_states), range(n_actions), range(n_states)):
-                expected_svf[k, t] += (expected_svf[i, t-1] *
-                                      policy[i, j] * # Stochastic policy
-                                      transition_probability[i, j, k])
+
+    for s in xrange(n_states):
+        for t in range(1, len(trajectories[0])):
+            expected_svf[s, t] = sum([expected_svf[pre_s, t-1] * transition_probability[pre_s, int(policy[pre_s]), s] for pre_s in xrange(n_states)])
 
     return expected_svf.sum(axis=1)
 

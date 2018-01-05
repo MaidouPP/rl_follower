@@ -58,10 +58,6 @@ def create_features(grid_map):
     return feature
 
 
-def model_world(world):
-    create_features(world)
-
-
 if __name__ == '__main__':
     obstacle_leftup = [[0, 0], [0, 26], [30,  20], [40, 0]]
     obstacle_hei_wid = [[10, 27], [12, 18], [20, 10], [15, 6]]
@@ -71,7 +67,7 @@ if __name__ == '__main__':
     traj = load_trajectories('data/trajectories')
     print traj
     features = create_features(grid_map)
-    r = maxent.irl(features, 4, 0.99, grid_map.transition_probability,
+    r = maxent.irl(features, 4, 0.99, grid_map.transition_mat,
                    traj, 20, 0.05)
 
     plt.pcolor(r.reshape((grid_map.x, grid_map.y)))
