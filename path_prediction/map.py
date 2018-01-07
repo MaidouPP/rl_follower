@@ -23,11 +23,9 @@ class GridMap(pygrid.pyGrid):
         self.n_states = self.x * self.y
         self.actions = ((1, 0), (0, 1), (-1, 0), (0, -1))
 
-        self.transition_probability = np.array(
-            [[[self._transition_probability(i, j, k)
-               for k in range(self.n_states)]
-              for j in range(self.n_actions)]
-             for i in range(self.n_states)])
+        # for now, we only deal with deterministic situation
+        self.transition_mat = self._get_transition_mat()
+
         self._set_obstacles()
 
     def _set_obstacles(self):
@@ -39,68 +37,33 @@ class GridMap(pygrid.pyGrid):
             self.cells[coord[1]:coord[1] + hei, coord[0]:coord[0] + wid] = 1
 
     def clear_trajectories(self):
-        self.cells[self.cells==2] = 0
+        self.cells[self.cells == 2] = 0
 
-    def _transition_probability(self, i, j, k):
+    def _get_transition_mat(self):
         """
-        Get the probability of transitioning from state i to state k given
-        action j.
+        Get transitioning mat with 3 dimension: state, action, state.
 
         i: State int.
         j: Action int.
         k: State int.
         -> p(s_k | s_i, a_j)
+
+        Since it's deterministic sceneriio, the mat is a 0/1 mat.
         """
 
-        xi, yi = self.int_to_point(i)
-        xj, yj = self.actions[j]
-        xk, yk = self.int_to_point(k)
+        p = np.zeros((self.n_states, self.n_actions, self.n_states))
+        for si in xrange(self.n_states):
+            pos_si = self.int_to_point(si)
+            pos_sj = (0, 0)
+            for a in xrange(self.n_actions):
+                inc = self.actions[a]
+                nei_s = (pos_si[0] + inc[0], pos_si[1] + inc[1])
+                if nei_s[0] >= 0 and nei_s[0] < self.height and nei_s[1] >= 0 and nei_s[1] < self.width and self.cells[nei_s[0]][nei_s[1]] != 1:
+                    pos_sj = nei_s
+                    sj = self.point_to_int(pos_sj)
+                    p[si, a, sj] = 1
 
-        if not self.neighbouring((xi, yi), (xk, yk)):
-            return 0.0
-
-        # Is k the intended state to move to?
-        if (xi + xj, yi + yj) == (xk, yk):
-            return 1 - self.wind + self.wind/self.n_actions
-
-        # If these are not the same point, then we can move there by wind.
-        if (xi, yi) != (xk, yk):
-            return self.wind/self.n_actions
-
-        # If these are the same point, we can only move here by either moving
-        # off the grid or being blown off the grid. Are we on a corner or not?
-        if (xi, yi) in {(0, 0), (self.x-1, self.x-1),
-                        (0, self.x-1), (self.x-1, 0)}:
-            # Corner.
-            # Can move off the edge in two directions.
-            # Did we intend to move off the grid?
-            if not (0 <= xi + xj < self.x and
-                    0 <= yi + yj < self.x):
-                # We intended to move off the grid, so we have the regular
-                # success chance of staying here plus an extra chance of blowing
-                # onto the *other* off-grid square.
-                return 1 - self.wind + 2*self.wind/self.n_actions
-            else:
-                # We can blow off the grid in either direction only by wind.
-                return 2*self.wind/self.n_actions
-        else:
-            # Not a corner. Is it an edge?
-            if (xi not in {0, self.x-1} and
-                yi not in {0, self.x-1}):
-                # Not an edge.
-                return 0.0
-
-            # Edge.
-            # Can only move off the edge in one direction.
-            # Did we intend to move off the grid?
-            if not (0 <= xi + xj < self.x and
-                    0 <= yi + yj < self.x):
-                # We intended to move off the grid, so we have the regular
-                # success chance of staying here.
-                return 1 - self.wind + self.wind/self.n_actions
-            else:
-                # We can blow off the grid only by wind.
-                return self.wind/self.n_actions
+        return p
 
     def int_to_point(self, i):
         """
@@ -120,7 +83,7 @@ class GridMap(pygrid.pyGrid):
         -> State int.
         """
 
-        return p[0] + p[1]*self.x
+        return p[0] + p[1] * self.x
 
     def neighbouring(self, i, k):
         """
@@ -162,7 +125,9 @@ def collect_trajectories(grid_map, file):
         grid_map.other(grid_map.int_to_point(trace[-1])[0],
                        grid_map.int_to_point(trace[-1])[1])
 
-        while True:
+        count = 1
+
+        while count <= 40:
             location = grid_map.int_to_point(trace[-1])
             action = pygame.event.poll()
 
@@ -171,11 +136,11 @@ def collect_trajectories(grid_map, file):
                     break
 
                 if action.key == pygame.K_UP:
-                    if grid_map.cells[location[1]-1][location[0]] <> 0:
+                    if grid_map.cells[location[1] - 1][location[0]] <> 0:
                         continue
                     else:
                         state = grid_map.point_to_int((location[0],
-                                                   location[1]-1))
+                                                       location[1] - 1))
                         trace.append(state)
 
                 elif action.key == pygame.K_DOWN:
@@ -183,27 +148,29 @@ def collect_trajectories(grid_map, file):
                         continue
                     else:
                         state = grid_map.point_to_int((location[0],
-                                                   location[1]+1))
+                                                       location[1] + 1))
                         trace.append(state)
 
                 if action.key == pygame.K_RIGHT:
                     if grid_map.cells[location[1]][location[0] + 1] <> 0:
                         continue
                     else:
-                        state = grid_map.point_to_int((location[0]+1,
-                                                   location[1]))
+                        state = grid_map.point_to_int((location[0] + 1,
+                                                       location[1]))
                         trace.append(state)
 
                 if action.key == pygame.K_LEFT:
                     if grid_map.cells[location[1]][location[0] - 1] <> 0:
                         continue
                     else:
-                        state = grid_map.point_to_int((location[0]-1,
-                                                   location[1]))
+                        state = grid_map.point_to_int((location[0] - 1,
+                                                       location[1]))
                         trace.append(state)
 
                 grid_map.other(grid_map.int_to_point(trace[-1])[0],
                                grid_map.int_to_point(trace[-1])[1])
+
+                count += 1
 
         trajectories.append(trace)
         grid_map.clear()
