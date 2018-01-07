@@ -74,6 +74,10 @@ if __name__ == '__main__':
     r = maxent.irl(features, 4, 0.99, grid_map.transition_probability,
                    traj, 20, 0.05)
 
+    f = open('data/reward/grid_world_reward', 'w')
+    pickle.dump(r, f)
+    f.close()
+
     plt.pcolor(r.reshape((grid_map.x, grid_map.y)))
     plt.colorbar()
     plt.title("Recorvered Reward")
